@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
-import heapq
 import math
 
 class Grafo:
@@ -16,21 +15,25 @@ class Grafo:
         self.vertices[origem][destino] = peso
 
     def dijkstra(self, inicio):
-        distancias = {v: float('infinity') for v in self.vertices}
+        distancias = {}
+        anteriores = {}
+        for v in self.vertices:
+            distancias[v] = float('inf')
+            anteriores[v] = None
         distancias[inicio] = 0
-        anteriores = {v: None for v in self.vertices}
-        fila = [(0, inicio)]
+
+        fila = []
+        fila.append((0, inicio))
 
         while fila:
-            distancia_atual, vertice_atual = heapq.heappop(fila)
-            if distancia_atual > distancias[vertice_atual]:
-                continue
-            for vizinho, peso in self.vertices[vertice_atual].items():
-                nova_distancia = distancia_atual + peso
+            fila.sort()
+            distancia_atual, vertice_atual = fila.pop(0)
+            for vizinho in self.vertices[vertice_atual]:
+                nova_distancia = distancia_atual + self.vertices[vertice_atual][vizinho]
                 if nova_distancia < distancias[vizinho]:
                     distancias[vizinho] = nova_distancia
                     anteriores[vizinho] = vertice_atual
-                    heapq.heappush(fila, (nova_distancia, vizinho))
+                    fila.append((nova_distancia, vizinho))
         return distancias, anteriores
 
     def mostrar_caminho(self, anteriores, destino):
@@ -74,7 +77,7 @@ class App:
             return
 
         distancias, anteriores = self.grafo.dijkstra(inicio)
-        if distancias[destino] == float('infinity'):
+        if distancias[destino] == float('inf'):
             messagebox.showinfo("Resultados Dijkstra", f"Sem caminho de {inicio} para {destino}")
             self.caminho_destaque.clear()
         else:
@@ -89,8 +92,15 @@ class App:
         self.canvas.delete("all")
         vertices = list(self.grafo.vertices.keys())
         num_vertices = len(vertices)
-        raio_grafo = 250
-        centro_x, centro_y = 400, 300
+
+        # Ajuste inteligente do raio e centro baseados na tela
+        largura_canvas = int(self.canvas['width'])
+        altura_canvas = int(self.canvas['height'])
+        margem = 50
+
+        centro_x, centro_y = largura_canvas / 2, altura_canvas / 2
+        raio_grafo = min(largura_canvas, altura_canvas) / 2 - margem
+
         angulo_offset = 2 * math.pi / max(num_vertices, 1)
         raio_vertice = 20
 
